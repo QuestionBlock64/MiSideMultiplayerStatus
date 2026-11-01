@@ -1,0 +1,46 @@
+{
+  "site": {
+    "name": "MiSide Multiplayer",
+    "logo": "assets/logo.png",
+    "background": "assets/background.jpg",
+    "links": []
+  },
+  "intervalMinutes": 5,
+  "timeoutMs": 8000,
+  "attempts": 2,
+  "retryDelayMs": 5000,
+  "staggerMs": 3000,
+  "slowMs": 1500,
+  "servers": [
+    {
+      "id": "s1",
+      "name": "Server 1",
+      "host": "78.154.103.17",
+      "port": 16289
+    },
+    {
+      "id": "s2",
+      "name": "Server 2",
+      "host": "78.154.103.41",
+      "port": 12434
+    },
+    {
+      "id": "s3",
+      "name": "Server 3",
+      "host": "78.154.103.15",
+      "port": 16585
+    },
+    {
+      "id": "s4",
+      "name": "Server 4",
+      "host": "78.154.103.17",
+      "port": 16295
+    },
+    {
+      "id": "s5",
+      "name": "Server 5",
+      "host": "78.154.103.14",
+      "port": 16715
+    }
+  ]
+}

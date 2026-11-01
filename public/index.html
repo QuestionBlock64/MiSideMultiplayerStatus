@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef0f7; --surface:rgba(255,255,255,.88); --ink:#1d1b3a; --muted:#6a6788; --line:rgba(29,27,58,.12);
+  --up:#14a38b; --slow:#e29a1f; --down:#e0445a; --none:#c9cbe0;
+  --veil:rgba(238,240,247,.78); --bgimg:none; --tipbg:#1d1b3a; --tipfg:#fff;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#14132b; --surface:rgba(29,28,59,.86); --ink:#eceaff; --muted:#a09ec4; --line:rgba(236,234,255,.14);
+         --none:#3d3b66; --veil:rgba(20,19,43,.76); --tipbg:#eceaff; --tipfg:#1d1b3a; }
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;color:var(--ink);font:400 16px/1.5 var(--body);padding:clamp(16px,4vw,40px) clamp(14px,4vw,32px) 56px}
+body::before{content:"";position:fixed;inset:0;z-index:-1;
+  background:linear-gradient(var(--veil),var(--veil)),var(--bgimg) center/cover no-repeat}
+main,.top{max-width:860px;margin:0 auto}
+
+.top{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:28px;text-align:center}
+.brand{display:flex;justify-content:center;text-decoration:none;color:var(--ink)}
+.brand img{width:min(440px,78vw);height:auto;display:none;filter:drop-shadow(0 4px 14px rgba(0,0,0,.18))}
+.brand span{font:700 28px var(--display);letter-spacing:-.01em}
+.links{display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+.links a{color:var(--ink);font-weight:500;text-decoration:none;border-bottom:1px solid var(--line)}
+.links a:hover{border-color:var(--ink)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.banner{--c:var(--none);border-left:6px solid var(--c);padding:22px 24px;margin-bottom:24px}
+.banner.up{--c:var(--up)} .banner.slow{--c:var(--slow)} .banner.down{--c:var(--down)}
+.banner h1{font:700 clamp(24px,4.5vw,36px)/1.1 var(--display);letter-spacing:-.02em;margin:0}
+.banner p{margin:6px 0 0;color:var(--muted)}
+.notice{display:none;border-color:var(--slow);padding:12px 18px;margin-bottom:16px;font-size:15px}
+
+h2.section{font:600 20px var(--display);margin:32px 0 12px}
+.comp{padding:18px 22px}
+.comp+.comp{border-top:1px solid var(--line)}
+.comp-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.name{font:600 18px var(--display);margin:0}
+.state{font-weight:600;font-size:14px;color:var(--muted)}
+.up .state{color:var(--up)} .slow .state{color:var(--slow)} .down .state{color:var(--down)}
+.bars{display:grid;grid-template-columns:repeat(90,1fr);gap:2px;height:34px;margin:12px 0 6px}
+.bars i{border-radius:2px;background:var(--none);cursor:default}
+.bars i.g{background:var(--up)} .bars i.y{background:var(--slow)} .bars i.r{background:var(--down)}
+.bars i:hover{outline:2px solid var(--ink);outline-offset:1px}
+.axis{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.l45{display:none}
+@media (max-width:520px){
+  .bars{grid-template-columns:repeat(45,1fr)}
+  .bars i:nth-child(-n+45){display:none}
+  .l90{display:none} .l45{display:inline}
+}
+
+.day{margin-bottom:22px}
+.day h3{font:600 17px var(--display);margin:0 0 8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.none{color:var(--muted);margin:0}
+.inc{padding:14px 0}
+.inc+.inc{border-top:1px solid var(--line)}
+.inc h4{font:600 17px var(--display);margin:0 0 6px}
+.inc h4.open{color:var(--down)} .inc h4.done{color:var(--ink)}
+.inc p{margin:4px 0;font-size:15px}
+.inc p b{font-weight:600}
+.inc .meta{color:var(--muted);font-size:14px}
+
+footer{margin-top:32px;color:var(--muted);font-size:13px}
+#tip{position:fixed;z-index:10;pointer-events:none;background:var(--tipbg);color:var(--tipfg);font-size:13px;line-height:1.35;padding:8px 10px;border-radius:8px;max-width:220px;display:none}
+#tip b{display:block;font-weight:600}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="top">
+  <a class="brand" href="./"><img id="logo" alt=""><span id="brandname">Server status</span></a>
+  <nav class="links" id="links"></nav>
+</div>
+<main>
+  <div class="card notice" id="notice"></div>
+  <section class="card banner" id="banner">
+    <h1 id="headline">Checking servers…</h1>
+    <p id="sub">&nbsp;</p>
+  </section>
+
+  <div class="card" id="comps" aria-live="polite"></div>
+
+  <h2 class="section">Past incidents</h2>
+  <div id="incidents"></div>
+
+  <footer id="foot"></footer>
+</main>
+<div id="tip" role="tooltip"></div>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LABEL = { up: "Operational", slow: "Degraded performance", down: "Unreachable", unknown: "No data yet" };
+
+const fmtDate = (ts) => new Date(ts).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+const fmtWhen = (ts) => new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const localKey = (ts) => new Date(ts).toLocaleDateString("en-CA");
+function dur(ms, interval) {
+  const m = Math.max(interval, Math.round(ms / 60000));
+  if (m < 60) return m + " min";
+  const h = Math.floor(m / 60), r = m % 60;
+  if (h < 48) return h + " h" + (r ? " " + r + " min" : "");
+  return Math.floor(h / 24) + " d";
+}
+function ago(ts) {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  return Math.floor(s / 86400) + " d ago";
+}
+
+function setupSite(site) {
+  const name = site.name || "Server status";
+  document.title = name + " — Server status";
+  $("brandname").textContent = name;
+  if (site.background) document.documentElement.style.setProperty("--bgimg", 'url("' + site.background + '")');
+  if (site.logo) {
+    const img = $("logo");
+    img.onload = () => { img.style.display = "block"; $("brandname").style.display = "none"; img.alt = name; };
+    img.src = site.logo;
+  }
+  $("links").innerHTML = (site.links || []).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
+}
+
+function dayClass(d) {
+  if (!d || !d.c) return "";
+  const down = d.c - d.u;
+  if (down === 0) return d.s / d.c >= 0.2 ? "y" : "g";
+  return down / d.c <= 0.05 ? "y" : "r";
+}
+
+function bars(server, interval) {
+  const map = Object.fromEntries(server.days.map((d) => [d.d, d]));
+  let html = "";
+  for (let i = 89; i >= 0; i--) {
+    const key = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10);
+    const d = map[key];
+    let tip;
+    const label = new Date(key + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    if (!d || !d.c) tip = "<b>" + label + "</b>No data";
+    else {
+      const down = d.c - d.u;
+      tip = "<b>" + label + "</b>" + (down ? "About " + dur(down * interval * 60000, interval) + " unreachable" : "No downtime recorded") +
+        (d.s && !down ? "<br>Some slow responses" : "");
+    }
+    html += `<i class="${dayClass(d)}" data-tip="${esc(tip)}"></i>`;
+  }
+  return html;
+}
+
+function renderBanner(d) {
+  const st = d.servers.map((s) => s.state);
+  const down = st.filter((s) => s === "down").length;
+  const slow = st.filter((s) => s === "slow").length;
+  const n = st.length;
+  const b = $("banner");
+  let cls = "up", head = "All systems operational", sub = "Every server is responding normally.";
+  if (!n) { cls = ""; head = "No servers configured"; sub = ""; }
+  else if (down === n) { cls = "down"; head = "Major outage"; sub = "None of the servers are responding."; }
+  else if (down) {
+    cls = "down"; head = "Partial outage";
+    sub = d.servers.filter((s) => s.state === "down").map((s) => s.name).join(", ") + (down > 1 ? " are" : " is") + " not responding.";
+  } else if (slow) {
+    cls = "slow"; head = "Degraded performance";
+    sub = d.servers.filter((s) => s.state === "slow").map((s) => s.name).join(", ") + (slow > 1 ? " are" : " is") + " responding slowly.";
+  }
+  b.className = "card banner " + cls;
+  $("headline").textContent = head;
+  $("sub").textContent = sub;
+}
+
+function renderComps(d) {
+  $("comps").innerHTML = d.servers.map((s) => `
+    <div class="comp ${s.state}">
+      <div class="comp-head"><h3 class="name">${esc(s.name)}</h3><span class="state">${LABEL[s.state] || ""}</span></div>
+      <div class="bars" role="img" aria-label="Daily status for ${esc(s.name)} over the last 90 days">${bars(s, d.intervalMinutes)}</div>
+      <div class="axis"><span class="l90">90 days ago</span><span class="l45">45 days ago</span><span>${s.uptime90 != null ? s.uptime90 + "% uptime" : "No data yet"}</span><span>Today</span></div>
+    </div>`).join("");
+}
+
+function renderIncidents(d) {
+  const byDay = {};
+  (d.incidents || []).forEach((i) => { (byDay[localKey(i.start)] = byDay[localKey(i.start)] || []).push(i); });
+  let html = "";
+  for (let k = 0; k < 14; k++) {
+    const ts = Date.now() - k * 864e5;
+    const list = (byDay[localKey(ts)] || []).sort((a, b) => b.start - a.start);
+    html += `<div class="day"><h3>${fmtDate(ts)}</h3>` + (list.length ? list.map((i) => {
+      const open = i.end == null;
+      return `<div class="inc"><h4 class="${open ? "open" : "done"}">${esc(i.serverName)} unreachable</h4>` +
+        (open
+          ? `<p><b>Investigating</b> — Not responding since ${fmtWhen(i.start)}.</p>`
+          : `<p><b>Resolved</b> — Back online at ${fmtWhen(i.end)}.</p><p><b>Investigating</b> — Not responding since ${fmtWhen(i.start)}.</p>` +
+            `<p class="meta">Lasted about ${dur(i.end - i.start, d.intervalMinutes)}.</p>`) + `</div>`;
+    }).join("") : `<p class="none">No incidents reported.</p>`) + `</div>`;
+  }
+  $("incidents").innerHTML = html;
+}
+
+function render(d) {
+  setupSite(d.site || {});
+  renderBanner(d); renderComps(d); renderIncidents(d);
+  const age = Date.now() - d.generatedAt;
+  const n = $("notice");
+  if (age > 25 * 60000) {
+    n.style.display = "block";
+    n.textContent = "Status data was last updated " + ago(d.generatedAt) + ". Checks may be delayed.";
+  } else n.style.display = "none";
+  $("foot").textContent = "Checked every " + d.intervalMinutes + " minutes. Last updated " + ago(d.generatedAt) + ".";
+}
+
+async function load() {
+  try {
+    const r = await fetch("status.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw 0;
+    const d = await r.json();
+    if (!d.servers) throw 0;
+    render(d);
+  } catch {
+    $("headline").textContent = "Status unavailable";
+    $("sub").textContent = "The first check hasn't finished yet, or the data can't be loaded. Try again in a few minutes.";
+  }
+}
+
+// tooltip for the daily bars (hover on desktop, tap on touch)
+const tip = $("tip");
+function showTip(e) {
+  const t = e.target.closest("[data-tip]");
+  if (!t) { tip.style.display = "none"; return; }
+  tip.innerHTML = t.dataset.tip;
+  tip.style.display = "block";
+  const r = t.getBoundingClientRect();
+  const w = tip.offsetWidth;
+  tip.style.left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8) + "px";
+  tip.style.top = Math.max(8, r.top - tip.offsetHeight - 8) + "px";
+}
+document.addEventListener("mouseover", showTip);
+document.addEventListener("click", showTip);
+document.addEventListener("scroll", () => (tip.style.display = "none"), { passive: true });
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

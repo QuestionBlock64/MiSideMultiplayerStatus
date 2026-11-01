@@ -1,0 +1,11 @@
+{
+  "name": "miside-status",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "check": "node scripts/check.js site/status.json site/status.json",
+    "probe": "node scripts/probe.js",
+    "preview": "node scripts/preview.js"
+  },
+  "engines": { "node": ">=18" }
+}
