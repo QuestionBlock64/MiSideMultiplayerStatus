@@ -11,6 +11,7 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  actions: write
 
 concurrency:
   group: status
@@ -19,6 +20,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -61,3 +63,14 @@ jobs:
 
       - id: deploy
         uses: actions/deploy-pages@v4
+
+      - name: Wait, then trigger next run
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 240
+          queued=$(gh run list --workflow status.yml --status queued --json databaseId --jq 'length')
+          if [ "$queued" -eq 0 ]; then
+            gh workflow run status.yml --ref main
+          fi
